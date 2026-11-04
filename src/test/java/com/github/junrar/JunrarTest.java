@@ -124,6 +124,22 @@ public class JunrarTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("the destination must exist and point to a directory: " + rarFileOnTemp.getAbsolutePath());
         }
+
+        @Test
+        public void ifFileIsInSiblingDirWithSamePrefix_ThrowException() throws IOException {
+            final File rarFileOnTemp = TestCommons.writeResourceToFolder(tempFolder, "sibling-prefix-traversal.rar");
+            final File extractDir = new File(tempFolder, "extract");
+            assertThat(extractDir.mkdir()).isTrue();
+            final File siblingFile = new File(new File(tempFolder, "extract_evil"), "pwned.txt");
+
+            Throwable thrown = catchThrowable(() -> Junrar.extract(rarFileOnTemp, extractDir));
+
+            assertThat(thrown)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Rar contains file with invalid path")
+                    .hasMessageContaining(siblingFile.getAbsolutePath());
+            assertThat(siblingFile).doesNotExist();
+        }
     }
 
     /**
